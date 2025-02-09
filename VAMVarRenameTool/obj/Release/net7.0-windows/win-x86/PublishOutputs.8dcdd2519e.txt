@@ -1,0 +1,7 @@
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\VAMVarRenameTool.pdb
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\D3DCompiler_47_cor3.dll
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\PenImc_cor3.dll
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\PresentationNative_cor3.dll
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\vcruntime140_cor3.dll
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\wpfgfx_cor3.dll
+D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\full\VAMVarRenameTool.exe
