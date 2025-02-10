@@ -128,12 +128,12 @@ public partial class MainWindow : Window
         {
             // 精确匹配 creator.package 开头的模式
             $@"^{Regex.Escape(meta.CreatorName)}\.{Regex.Escape(meta.PackageName)}\.(?<version>[^\s\.]+)[^\.]*\.var$",
-            // 通用匹配模式：捕获最后一个点之前的数字/字母组合
-            @"(?:^|\.)(?<version>\d+[\w\.-]*)(?!.*\d)[^\.]*\.var$",
-            // 匹配包含括号的情况
-            @"$(?<version>\d+)$\.var$",
             // 匹配 latest 的特殊情况
-            @"\.(?<version>latest)\.var$"
+            @"\.(?<version>latest)\.var$",
+            // 通用匹配模式：捕获最后一个点之前的数字/字母组合
+            @"(?:\.)(?<version>\d+)\.var$",
+            // 三段式
+            @".*\..*\.(?<version>\d+)\.var$",
         };
 
         foreach (var pattern in patterns)
@@ -144,6 +144,14 @@ public partial class MainWindow : Window
             if (match.Success)
             {
                 var version = match.Groups["version"].Value;
+                if (Int32.TryParse(version, out var number))
+                {
+                    version = number.ToString();   
+                }
+                else
+                {
+                    break;
+                }
                 // 清理可能包含的额外字符
                 return Regex.Replace(version, @"[^\w\.-]", "");
             }

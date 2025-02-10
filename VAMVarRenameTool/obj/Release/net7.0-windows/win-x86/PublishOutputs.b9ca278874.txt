@@ -1,2 +1,0 @@
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\VAMVarRenameTool.pdb
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\net7.0-windows\win-x86\publish\VAMVarRenameTool.exe

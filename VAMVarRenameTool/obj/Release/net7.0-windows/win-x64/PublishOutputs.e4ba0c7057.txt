@@ -1,5 +1,0 @@
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\VAMVarRenameTool.exe
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\VAMVarRenameTool.deps.json
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\VAMVarRenameTool.runtimeconfig.json
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\VAMVarRenameTool.pdb
-D:\workspace\VAMVarRenameTool\VAMVarRenameTool\bin\Release\VAMVarRenameTool.dll
