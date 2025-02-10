@@ -7,8 +7,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Markup;
-using Microsoft.Win32;
 
 namespace VAMVarRenameTool;
 
@@ -138,20 +136,21 @@ public partial class MainWindow : Window
 
         foreach (var pattern in patterns)
         {
-            var match = Regex.Match(filename, pattern, 
+            var match = Regex.Match(filename, pattern,
                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        
+
             if (match.Success)
             {
                 var version = match.Groups["version"].Value;
                 if (Int32.TryParse(version, out var number))
                 {
-                    version = number.ToString();   
+                    version = number.ToString();
                 }
                 else
                 {
                     break;
                 }
+
                 // 清理可能包含的额外字符
                 return Regex.Replace(version, @"[^\w\.-]", "");
             }
