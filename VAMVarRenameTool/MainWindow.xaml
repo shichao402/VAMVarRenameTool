@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         AllowDrop="True"
         mc:Ignorable="d"
-        Title="VAR File Renamer" Height="450" Width="800">
+        Title="VAMVarRenameTool" Height="450" Width="800">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
