@@ -29,16 +29,22 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore /p:Version=${{ github.run_number }}
+      run: dotnet build --configuration Release --no-restore /p:Version=0.1.${{ github.run_number }}
 
     - name: Test
       run: dotnet test --no-restore --verbosity normal
 
-    - name: Publish
-      run: dotnet publish --configuration Release --no-restore --output ./output --runtime win-x64 --self-contained /p:Version=${{ github.run_number }}
+    - name: Publish self-contained
+      run: dotnet publish --configuration Release --no-restore --output ./output-selfcontained --runtime win-x64 --self-contained /p:Version=0.1.${{ github.run_number }}
 
-    - name: Archive output files
-      run: Compress-Archive -Path ./output/* -DestinationPath ./VAMVarRenameTool.zip
+    - name: Publish framework-dependent
+      run: dotnet publish --configuration Release --no-restore --output ./output-frameworkdependent --runtime win-x64 /p:Version=0.1.${{ github.run_number }}
+
+    - name: Archive self-contained output files
+      run: Compress-Archive -Path ./output-selfcontained/* -DestinationPath ./VAMVarRenameTool-selfcontained.zip
+
+    - name: Archive framework-dependent output files
+      run: Compress-Archive -Path ./output-frameworkdependent/* -DestinationPath ./VAMVarRenameTool-frameworkdependent.zip
 
     - name: Create release
       id: create_release
@@ -46,17 +52,27 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v${{ github.run_number }}
-        release_name: Release v${{ github.run_number }}
+        tag_name: v0.1.${{ github.run_number }}
+        release_name: Release v0.1.${{ github.run_number }}
         draft: false
         prerelease: false
 
-    - name: Upload release asset
+    - name: Upload self-contained release asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./VAMVarRenameTool.zip
-        asset_name: VAMVarRenameTool.zip
+        asset_path: ./VAMVarRenameTool-selfcontained.zip
+        asset_name: VAMVarRenameTool-selfcontained.zip
+        asset_content_type: application/zip
+
+    - name: Upload framework-dependent release asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./VAMVarRenameTool-frameworkdependent.zip
+        asset_name: VAMVarRenameTool-frameworkdependent.zip
         asset_content_type: application/zip

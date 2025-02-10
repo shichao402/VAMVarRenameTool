@@ -6,7 +6,7 @@
         <Nullable>enable</Nullable>
         <UseWPF>true</UseWPF>
         <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
-        <Version>0.1.0.*</Version>
+        <Version>0.1.0</Version>
     </PropertyGroup>
 
 </Project>
