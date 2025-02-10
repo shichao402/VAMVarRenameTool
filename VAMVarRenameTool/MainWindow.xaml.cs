@@ -122,7 +122,7 @@ public partial class MainWindow : Window
         ExecuteRenames(renamePlan);
     }
 
-    private string ExtractVersion(string filename, MetaData meta)
+    public string ExtractVersion(string filename, MetaData meta)
     {
         var patterns = new[]
         {

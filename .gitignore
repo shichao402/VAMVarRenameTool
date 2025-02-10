@@ -2,4 +2,6 @@
 /test
 /VAMVarRenameTool/bin
 /VAMVarRenameTool/obj
+/VAMVarRenameTool.Tests/bin
+/VAMVarRenameTool.Tests/obj
 /*.DotSettings.user
