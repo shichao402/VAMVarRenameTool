@@ -4,6 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFramework>net7.0-windows</TargetFramework>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
   <ItemGroup>
