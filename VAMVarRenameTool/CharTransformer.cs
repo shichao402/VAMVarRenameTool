@@ -4,6 +4,7 @@ public class CharTransformer
 {
     private static readonly Dictionary<char, char> CharMap = new()
     {
+        { ' ', '_' },
         { '*', '_' },
         { '|', '_' },
         { '\'', '_' },

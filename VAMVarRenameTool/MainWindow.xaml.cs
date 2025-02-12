@@ -80,45 +80,6 @@ public partial class MainWindow : Window
         ExecuteRenames(renamePlan);
     }
 
-    public string ExtractVersion(string filename, MetaData meta)
-    {
-        var patterns = new[]
-        {
-            // 精确匹配 creator.package 开头的模式
-            $@"^{Regex.Escape(meta.CreatorName)}\.{Regex.Escape(meta.PackageName)}\.(?<version>[^\s\.]+)[^\.]*\.var$",
-            // 匹配 latest 的特殊情况
-            @"\.(?<version>latest)\.var$",
-            // 通用匹配模式：捕获最后一个点之前的数字/字母组合
-            @"(?:\.)(?<version>\d+)\.var$",
-            // 三段式
-            @".*\..*\.(?<version>\d+)\.var$",
-        };
-
-        foreach (var pattern in patterns)
-        {
-            var match = Regex.Match(filename, pattern,
-                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-            if (match.Success)
-            {
-                var version = match.Groups["version"].Value;
-                if (Int32.TryParse(version, out var number))
-                {
-                    version = number.ToString();
-                }
-                else
-                {
-                    break;
-                }
-
-                // 清理可能包含的额外字符
-                return Regex.Replace(version, @"[^\w\.-]", "");
-            }
-        }
-
-        throw new FormatException($"Version pattern not found in: {filename}");
-    }
-
     private void DetectConflicts(List<RenameInfo> renames)
     {
         var nameCounts = renames
