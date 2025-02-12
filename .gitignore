@@ -5,3 +5,4 @@
 /VAMVarRenameTool.Tests/bin
 /VAMVarRenameTool.Tests/obj
 /*.DotSettings.user
+/output-*
