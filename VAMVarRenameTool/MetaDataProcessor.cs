@@ -25,9 +25,9 @@ namespace VAMVarRenameTool
             _versionPatterns = new List<Regex>
             {
                 new Regex(@"^{0}\.{1}\.(?<version>[^\s\.]+)[^\.]*\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
-                new Regex(@"(?:^|\.)(?<version>\d+[\w\.-]*)(?!.*\d)[^\.]*\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
-                new Regex(@"$(?<version>\d+)$\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
-                new Regex(@"\.(?<version>latest)\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+                new Regex(@"\.(?<version>latest)\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+                new Regex(@"(?:\.)(?<version>\d+)\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+                new Regex(@".*\..*\.(?<version>\d+)\.var$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
             };
 
             _charTransformer = new CharTransformer();
@@ -91,15 +91,32 @@ namespace VAMVarRenameTool
 
         private string ExtractVersion(string filename, MetaData meta)
         {
-            foreach (var pattern in _versionPatterns)
+            var patterns = new[]
             {
-                var formattedPattern = string.Format(pattern.ToString(), Regex.Escape(meta.CreatorName), Regex.Escape(meta.PackageName));
-                var match = Regex.Match(filename, formattedPattern, 
+                $@"^{Regex.Escape(meta.CreatorName)}\.{Regex.Escape(meta.PackageName)}\.(?<version>[^\s\.]+)[^\.]*\.var$",
+                @"\.(?<version>latest)\.var$",
+                @"(?:\.)(?<version>\d+)\.var$",
+                @".*\..*\.(?<version>\d+)\.var$",
+            };
+
+            foreach (var pattern in patterns)
+            {
+                var match = Regex.Match(filename, pattern,
                     RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-            
+
                 if (match.Success)
                 {
                     var version = match.Groups["version"].Value;
+                    if (Int32.TryParse(version, out var number))
+                    {
+                        version = number.ToString();
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                    // 清理可能包含的额外字符
                     return Regex.Replace(version, @"[^\w\.-]", "");
                 }
             }
