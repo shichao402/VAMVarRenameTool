@@ -58,59 +58,19 @@ public partial class MainWindow : Window
 
         var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
         var renamePlan = new List<RenameInfo>();
-
-        var options = new JsonSerializerOptions
-        {
-            AllowTrailingCommas = true, // 允许末尾逗号
-            ReadCommentHandling = JsonCommentHandling.Skip, // 允许注释
-            PropertyNameCaseInsensitive = true // 忽略属性名大小写
-        };
+        var metaDataProcessor = new MetaDataProcessor();
 
         foreach (var file in files)
         {
             var result = new FileResult {OriginalPath = file};
 
-            try
+            var meta = metaDataProcessor.ProcessMetaData(file, out var status, out var newName);
+            result.Status = status;
+            result.NewName = newName;
+
+            if (meta != null && status == "Ready")
             {
-                using var archive = ZipFile.OpenRead(file);
-                var metaEntry = archive.GetEntry("meta.json") ??
-                                throw new FileNotFoundException("meta.json missing");
-
-                using var stream = metaEntry.Open();
-                using var reader = new StreamReader(stream);
-
-                var meta = JsonSerializer.Deserialize<MetaData>(reader.ReadToEnd(), options) ??
-                           throw new InvalidDataException("Invalid meta.json");
-
-                int error = 0;
-                if (string.IsNullOrEmpty(meta.CreatorName))
-                {
-                    meta.CreatorName = "Unknown";
-                    ++error;
-                }
-
-                if (string.IsNullOrEmpty(meta.PackageName))
-                {
-                    meta.CreatorName = "Unknown";
-                    ++error;
-                }
-
-                if (error < 2)
-                {
-                    string version = ExtractVersion(Path.GetFileName(file), meta);
-                    string newName = $"{meta.CreatorName}.{meta.PackageName}.{version}.var";
-                    result.NewName = newName;
-                    renamePlan.Add(new RenameInfo(file, newName));
-                    result.Status = "Ready";
-                }
-                else
-                {
-                    result.Status = "Skip";
-                }
-            }
-            catch (Exception ex)
-            {
-                result.Status = $"Error: {ex.Message}";
+                renamePlan.Add(new RenameInfo(file, newName));
             }
 
             Results.Add(result);
