@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
@@ -9,5 +9,14 @@
         <Version>0.1.0</Version>
         <UseAppHost>true</UseAppHost>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Update="Config\creator_mappings.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Config\package_mappings.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
 </Project>

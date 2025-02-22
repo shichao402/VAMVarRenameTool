@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
+using VAMVarRenameTool.MetaData;
+using VAMVarRenameTool.EventSystem;
 
 namespace VAMVarRenameTool;
 
@@ -52,32 +54,8 @@ public partial class MainWindow : Window
 
     private void Process_Click(object sender, RoutedEventArgs e)
     {
-        Results.Clear();
-        var directory = txtPath.Text;
-        if (!Directory.Exists(directory)) return;
-
-        var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
-        var renamePlan = new List<RenameInfo>();
-        var metaDataProcessor = new MetaDataProcessor();
-
-        foreach (var file in files)
-        {
-            var result = new FileResult {OriginalPath = file};
-
-            var meta = metaDataProcessor.ProcessMetaData(file, out var status, out var newName);
-            result.Status = status;
-            result.NewName = newName;
-
-            if (meta != null && status == "Ready")
-            {
-                renamePlan.Add(new RenameInfo(file, newName));
-            }
-
-            Results.Add(result);
-        }
-
-        DetectConflicts(renamePlan);
-        ExecuteRenames(renamePlan);
+        EventStartFixNameInAFolder x = new(txtPath.Text, "*.var");
+        Logic.Instance.EventManager.TriggerEvent(x);
     }
 
     private void DetectConflicts(List<RenameInfo> renames)
@@ -105,7 +83,7 @@ public partial class MainWindow : Window
                 var newPath = Path.Combine(Path.GetDirectoryName(rename.OriginalPath)!, rename.NewName);
                 if (rename.OriginalPath != newPath)
                 {
-                    File.Move(rename.OriginalPath, newPath);
+                    Logic.Instance.EventManager.TriggerEvent(new EventStartFixNameInAFolder(rename.OriginalPath, newPath));
                     Results.First(r => r.OriginalPath == rename.OriginalPath).Status = "Renamed";
                 }
                 else
@@ -119,12 +97,6 @@ public partial class MainWindow : Window
             }
         }
     }
-}
-
-public class MetaData
-{
-    public string CreatorName { get; set; } = string.Empty;
-    public string PackageName { get; set; } = string.Empty;
 }
 
 public class FileResult
