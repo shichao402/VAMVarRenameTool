@@ -1,2 +1,0 @@
-originalCreator1, transformedCreator1
-originalCreator2, transformedCreator2

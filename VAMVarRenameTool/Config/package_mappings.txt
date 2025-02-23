@@ -1,2 +1,0 @@
-originalPackage1, transformedPackage1
-originalPackage2, transformedPackage2

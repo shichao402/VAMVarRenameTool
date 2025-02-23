@@ -1,5 +1,6 @@
 /.idea
 /test
+/test.bak
 /VAMVarRenameTool/bin
 /VAMVarRenameTool/obj
 /VAMVarRenameTool.Tests/bin

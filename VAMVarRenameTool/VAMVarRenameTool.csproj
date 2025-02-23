@@ -11,10 +11,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Update="Config\creator_mappings.txt">
+        <None Update="Config\meta2name_creator.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
-        <None Update="Config\package_mappings.txt">
+        <None Update="Config\meta2name_package.txt">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="Config\meta2name_creator_package.txt">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

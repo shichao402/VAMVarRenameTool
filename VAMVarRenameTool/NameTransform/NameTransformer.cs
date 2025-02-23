@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using VAMVarRenameTool.NameTransform;
+
+namespace VAMVarRenameTool.NameTransform;
 
 public class NameTransformer
 {

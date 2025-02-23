@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace VAMVarRenameTool.MetaData
 {
-    public class VarMetaDataProcessor
+    public class VarMetaProcessor
     {
         private readonly JsonSerializerOptions _options = new()
         {
@@ -14,37 +14,30 @@ namespace VAMVarRenameTool.MetaData
             PropertyNameCaseInsensitive = true // 忽略属性名大小写
         };
 
-        public bool ProcessVarMeta(string file, ref VarMeta varMeta)
+        public bool ParseFromVarFile(string file, ref VarMeta varMeta)
         {
-            try
+            using var archive = ZipFile.OpenRead(file);
+            var metaEntry = archive.GetEntry("meta.json") ??
+                            throw new FileNotFoundException("meta.json missing");
+
+            using var stream = metaEntry.Open();
+            using var reader = new StreamReader(stream);
+
+            var meta = JsonSerializer.Deserialize<VarMeta>(reader.ReadToEnd(), _options) ??
+                       throw new InvalidDataException("Invalid meta.json");
+
+            if (string.IsNullOrEmpty(meta.CreatorName))
             {
-                using var archive = ZipFile.OpenRead(file);
-                var metaEntry = archive.GetEntry("meta.json") ??
-                                throw new FileNotFoundException("meta.json missing");
-
-                using var stream = metaEntry.Open();
-                using var reader = new StreamReader(stream);
-
-                var meta = JsonSerializer.Deserialize<VarMeta>(reader.ReadToEnd(), _options) ??
-                           throw new InvalidDataException("Invalid meta.json");
-
-                if (string.IsNullOrEmpty(meta.CreatorName))
-                {
-                    meta.CreatorName = "Unknown";
-                }
-
-                if (string.IsNullOrEmpty(meta.PackageName))
-                {
-                    meta.CreatorName = "Unknown";
-                }
-
-                return true;
+                meta.CreatorName = "Unknown";
             }
-            catch (Exception ex)
+
+            if (string.IsNullOrEmpty(meta.PackageName))
             {
-                throw;
+                meta.CreatorName = "Unknown";
             }
-            return false;
+            varMeta.CopyFrom(meta);
+
+            return true;
         }
     }
 }

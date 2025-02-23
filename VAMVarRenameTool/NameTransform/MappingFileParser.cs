@@ -14,7 +14,7 @@ namespace VAMVarRenameTool.NameTransform
                     map.Clear();
                 foreach (var line in File.ReadAllLines(filePath))
                 {
-                    var parts = line.Split(new[] { ',' }, 2);
+                    var parts = line.Split(new[] { ",,," }, StringSplitOptions.TrimEntries);
                     var key = parts[0].Trim();
                     var value = parts.Length > 1 ? parts[1].Trim() : key;
                     map[key] = value;
