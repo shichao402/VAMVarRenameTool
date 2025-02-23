@@ -16,6 +16,12 @@ Config你可以自行修改, 格式是{meta中的名字},,,{文件名中的名�
 
 ![VAMVarRenameTool_pgkwaN7wTp.jpg](VAMVarRenameTool_pgkwaN7wTp.jpg)
 
+## 可能会做的
+
+1. 重新组织文件夹结构, 以作者名做为子目录分类存放. 非关注作者单独存放到.Dependencies目录中.
+2. 分析meta, 找出缺失依赖.
+3. 依赖f95zone.SharpVaMTools内置的download连接.做自动补全依赖功能.因为SharpVaMTools内置的下载器我经常无法下载. 但单独提取连接用curl是可以正常下载的.
+
 ## 更新
 - 2025年2月23日
   - 新增一些改名映射, 应对一些特殊var包
