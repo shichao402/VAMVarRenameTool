@@ -144,7 +144,16 @@ public partial class MainWindow : Window
         {
             var result = new FileResult { OriginalPath = file };
             VarMeta varMeta = new VarMeta();
-            Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+            try
+            {
+                Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+            }
+            catch (Exception exception)
+            {
+                result.Status = exception.Message;
+                Results.Add(result);
+                continue;
+            }
 
             varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
             varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
@@ -203,7 +212,8 @@ public partial class MainWindow : Window
             catch (Exception exception)
             {
                 result.Status = exception.Message;
-                throw;
+                Results.Add(result);
+                continue;
             }
 
             Results.Add(result);
@@ -257,7 +267,17 @@ public partial class MainWindow : Window
         {
             var result = new FileResult {OriginalPath = file};
             VarMeta varMeta = new VarMeta();
-            Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+            try
+            {
+                Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+            }
+            catch (Exception exception)
+            {
+                result.Status = exception.Message;
+                Results.Add(result);
+                continue;
+            }
+            
             // meta内的值转换特殊字符. 这是vam var本身的设计逻辑, 尊重.
             varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
             varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
