@@ -161,6 +161,17 @@ public partial class MainWindow : Window
             Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
             Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
             Core.Instance.PackageNameTransformer.TryTransform(varMeta);
+            
+            VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
+            // 有一种异常情况, 有的作者...连meta都不写. meta里的作者都是空的.
+            if (varMeta.CreatorName == "Unknown")
+            {
+                varMeta.CreatorName = varFileName.Creator;
+            }
+            if (varMeta.PackageName == "Unknown")
+            {
+                varMeta.PackageName = varFileName.Package;
+            }
 
             string targetDirectory;
             if (favoriteCreator.Contains(varMeta.CreatorName))
@@ -290,6 +301,15 @@ public partial class MainWindow : Window
             VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
 
             // 到这里， 理论上varMeta和varFileName里的数据应该完全一致。 如果不一致， 应该用varMeta里的数据替换到VarFileName
+            // 有一种异常情况, 有的作者...连meta都不写. meta里的作者都是空的.
+            if (varMeta.CreatorName == "Unknown")
+            {
+                varMeta.CreatorName = varFileName.Creator;
+            }
+            if (varMeta.PackageName == "Unknown")
+            {
+                varMeta.PackageName = varFileName.Package;
+            }
             if (varFileName.Creator != varMeta.CreatorName)
             {
                 varFileName.Creator = varMeta.CreatorName;
