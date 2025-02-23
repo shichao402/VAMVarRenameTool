@@ -1,0 +1,13 @@
+﻿AcidBubbles.Embody
+AcidBubbles.Glance
+Captain Varghoss.BellyBulger
+cotyounoyume.ExpressionBlushingAndTearsFullVer
+Evo.ResolutionPresetManager
+Hunting-Succubus.GhostPenetrator
+JayJayWon.BrowserAssist
+JayJayWon.UIAssistPatron
+MacGruber.Essentials
+PluginIdea.ContexMenuSystem
+Redeyes.GiveMeFPS
+TBD.BodyNet_PRO
+Yoooi.ToySerialController

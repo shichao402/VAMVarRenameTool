@@ -138,6 +138,7 @@ public partial class MainWindow : Window
         if (!Directory.Exists(directory)) return;
 
         var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt").Select(line => line.Trim().ToLower()));
+        var pluginNames = new HashSet<string>(File.ReadAllLines("Config/plugins.txt").Select(line => line.Trim().ToLower()));
         var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
 
         foreach (var file in files)
@@ -176,7 +177,12 @@ public partial class MainWindow : Window
             }
 
             string targetDirectory;
-            if (favoriteCreator.Contains(varMeta.CreatorName.ToLower()))
+
+            if (pluginNames.Contains($"{varMeta.CreatorName.ToLower()}.{varMeta.PackageName}".ToLower()))
+            {
+                targetDirectory = Path.Combine(directory, ".Plugins", varMeta.CreatorName);
+            }
+            else if (favoriteCreator.Contains(varMeta.CreatorName.ToLower()))
             {
                 targetDirectory = Path.Combine(directory, "Organized", varMeta.CreatorName);
             }
