@@ -142,6 +142,8 @@ public partial class MainWindow : Window
 
         foreach (var file in files)
         {
+            if (file.Contains(".Plugins"))
+                continue;
             var result = new FileResult { OriginalPath = file };
             VarMeta varMeta = new VarMeta();
             try
