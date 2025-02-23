@@ -17,15 +17,16 @@
                      PreviewDragOver="TxtPath_PreviewDragOver"
                      Drop="TxtPath_Drop"/>
             <Button Content="Select Folder" Click="BrowseFolder_Click" Margin="5"/>
-            <Button Content="Process" Click="Process_Click" Margin="5"/>
+            <Button Content="Fix File Name" Click="FixFileName_Click" Margin="5"/>
+            <Button Content="Organize" Click="Organize_Click" Margin="5"/>
         </StackPanel>
 
         <DataGrid x:Name="dgResults" Grid.Row="1" Margin="5" AutoGenerateColumns="False"
                   CanUserAddRows="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Original File" Binding="{Binding OriginalPath}" Width="*"/>
-                <DataGridTextColumn Header="New Name" Binding="{Binding NewName}" Width="*"/>
+                <DataGridTextColumn Header="Original File" Binding="{Binding OriginalPath}" Width="600"/>
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="100"/>
+                <DataGridTextColumn Header="New Name" Binding="{Binding NewName}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

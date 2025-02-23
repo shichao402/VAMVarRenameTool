@@ -16,26 +16,30 @@ namespace VAMVarRenameTool.MetaData
 
         public bool ParseFromVarFile(string file, ref VarMeta varMeta)
         {
-            using var archive = ZipFile.OpenRead(file);
-            var metaEntry = archive.GetEntry("meta.json") ??
-                            throw new FileNotFoundException("meta.json missing");
-
-            using var stream = metaEntry.Open();
-            using var reader = new StreamReader(stream);
-
-            var meta = JsonSerializer.Deserialize<VarMeta>(reader.ReadToEnd(), _options) ??
-                       throw new InvalidDataException("Invalid meta.json");
-
-            if (string.IsNullOrEmpty(meta.CreatorName))
+            using (var archive = ZipFile.OpenRead(file))
             {
-                meta.CreatorName = "Unknown";
-            }
+                var metaEntry = archive.GetEntry("meta.json") ??
+                                throw new FileNotFoundException("meta.json missing");
 
-            if (string.IsNullOrEmpty(meta.PackageName))
-            {
-                meta.CreatorName = "Unknown";
+                using (var stream = metaEntry.Open())
+                using (var reader = new StreamReader(stream))
+                {
+                    var meta = JsonSerializer.Deserialize<VarMeta>(reader.ReadToEnd(), _options) ??
+                               throw new InvalidDataException("Invalid meta.json");
+
+                    if (string.IsNullOrEmpty(meta.CreatorName))
+                    {
+                        meta.CreatorName = "Unknown";
+                    }
+
+                    if (string.IsNullOrEmpty(meta.PackageName))
+                    {
+                        meta.PackageName = "Unknown";
+                    }
+
+                    varMeta.CopyFrom(meta);
+                }
             }
-            varMeta.CopyFrom(meta);
 
             return true;
         }

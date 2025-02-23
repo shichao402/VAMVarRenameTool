@@ -11,15 +11,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Update="Config\meta2name_creator.txt">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Config\meta2name_package.txt">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
-        <None Update="Config\meta2name_creator_package.txt">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </None>
+        <Content Include="Config\**\*">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

@@ -25,7 +25,9 @@ Config你可以自行修改, 格式是{meta中的名字},,,{文件名中的名�
 ## 更新
 - 2025年2月23日
   - 新增一些改名映射, 应对一些特殊var包
-  - 处理案例
-    - 14mhz.Plugin-AtomClickTrigger.3.var
-    - Abubu Nownanka.EgyptThroneRoom.1.var
-    - AcidBubbles.Scripter1.16.var
+    - 处理案例
+      - 14mhz.Plugin-AtomClickTrigger.3.var
+      - Abubu Nownanka.EgyptThroneRoom.1.var
+      - AcidBubbles.Scripter1.16.var
+  - 现在目标目录以及窗口大小和列表表头会记住状态以便下一次使用
+  - 新增组织文件夹功能. 在favorite_creator.txt中填入你关注的作者名字. 组织文件夹的时候会组织到根目录. 其余的会组织到.Dependencies目录中.

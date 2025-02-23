@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text.Json;
-using System.Text.RegularExpressions;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using VAMVarRenameTool.MetaData;
 using VAMVarRenameTool.EventSystem;
 using VAMVarRenameTool.NameTransform;
@@ -15,12 +15,87 @@ namespace VAMVarRenameTool;
 
 public partial class MainWindow : Window
 {
+    private const string CacheDirectory = "Cache";
+    private const string CacheFilePath = "Cache/lastPath.txt";
+    private const string WindowSizeCacheFilePath = "Cache/windowSize.txt";
+    private const string ColumnWidthCacheFilePath = "Cache/columnWidths.txt";
+
     public ObservableCollection<FileResult> Results { get; } = new();
 
     public MainWindow()
     {
         InitializeComponent();
         dgResults.ItemsSource = Results;
+        LoadLastPath();
+        LoadWindowSize();
+        LoadColumnWidths();
+    }
+
+    private void LoadLastPath()
+    {
+        if (File.Exists(CacheFilePath))
+        {
+            txtPath.Text = File.ReadAllText(CacheFilePath);
+        }
+    }
+
+    private void SaveLastPath(string path)
+    {
+        if (!Directory.Exists(CacheDirectory))
+        {
+            Directory.CreateDirectory(CacheDirectory);
+        }
+        File.WriteAllText(CacheFilePath, path);
+    }
+
+    private void LoadWindowSize()
+    {
+        if (File.Exists(WindowSizeCacheFilePath))
+        {
+            var size = File.ReadAllText(WindowSizeCacheFilePath).Split(',');
+            if (size.Length == 2 && double.TryParse(size[0], out double width) && double.TryParse(size[1], out double height))
+            {
+                this.Width = width;
+                this.Height = height;
+            }
+        }
+    }
+
+    private void SaveWindowSize()
+    {
+        if (!Directory.Exists(CacheDirectory))
+        {
+            Directory.CreateDirectory(CacheDirectory);
+        }
+        File.WriteAllText(WindowSizeCacheFilePath, $"{this.Width},{this.Height}");
+    }
+
+    private void LoadColumnWidths()
+    {
+        if (File.Exists(ColumnWidthCacheFilePath))
+        {
+            var widths = File.ReadAllText(ColumnWidthCacheFilePath).Split(',');
+            if (widths.Length == dgResults.Columns.Count)
+            {
+                for (int i = 0; i < widths.Length; i++)
+                {
+                    if (double.TryParse(widths[i], out double width))
+                    {
+                        dgResults.Columns[i].Width = width;
+                    }
+                }
+            }
+        }
+    }
+
+    private void SaveColumnWidths()
+    {
+        if (!Directory.Exists(CacheDirectory))
+        {
+            Directory.CreateDirectory(CacheDirectory);
+        }
+        var widths = dgResults.Columns.Select(c => c.Width.ToString()).ToArray();
+        File.WriteAllText(ColumnWidthCacheFilePath, string.Join(",", widths));
     }
 
     private void BrowseFolder_Click(object sender, RoutedEventArgs e)
@@ -37,6 +112,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() == true)
         {
             txtPath.Text = Path.GetDirectoryName(dialog.FileName);
+            SaveLastPath(txtPath.Text);
         }
     }
 
@@ -51,9 +127,107 @@ public partial class MainWindow : Window
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
         var paths = (string[]) e.Data.GetData(DataFormats.FileDrop);
         txtPath.Text = Directory.Exists(paths[0]) ? paths[0] : Path.GetDirectoryName(paths[0]);
+        SaveLastPath(txtPath.Text);
     }
 
-    private void Process_Click(object sender, RoutedEventArgs e)
+    private void Organize_Click(object sender, RoutedEventArgs e)
+    {
+        Results.Clear();
+        var directory = txtPath.Text;
+        if (!Directory.Exists(directory)) return;
+
+        var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt").Select(line => line.Trim()));
+        var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
+
+        foreach (var file in files)
+        {
+            var result = new FileResult { OriginalPath = file };
+            VarMeta varMeta = new VarMeta();
+            Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+
+            varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
+            varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
+
+            Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
+            Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
+            Core.Instance.PackageNameTransformer.TryTransform(varMeta);
+
+            string targetDirectory;
+            if (favoriteCreator.Contains(varMeta.CreatorName))
+            {
+                targetDirectory = Path.Combine(directory, varMeta.CreatorName);
+            }
+            else
+            {
+                targetDirectory = Path.Combine(directory, ".Dependencies", varMeta.CreatorName);
+            }
+
+            try
+            {
+                if (!Directory.Exists(targetDirectory))
+                {
+                    Directory.CreateDirectory(targetDirectory);
+                }
+
+                var targetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+
+                if (file.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Status = "Same, skip move";
+                }
+                else
+                {
+                    if (File.Exists(targetPath))
+                    {
+                        if (FilesAreEqual(file, targetPath))
+                        {
+                            File.Delete(file);
+                        }
+                        else
+                        {
+                            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                            var newTargetPath = Path.Combine(targetDirectory, $"{Path.GetFileNameWithoutExtension(file)}.{timestamp}{Path.GetExtension(file)}");
+                            File.Move(file, newTargetPath);
+                        }
+                    }
+                    else
+                    {
+                        File.Move(file, targetPath);
+                    }
+
+                    result.NewName = targetPath;
+                    result.Status = "Moved";
+                }
+            }
+            catch (Exception exception)
+            {
+                result.Status = exception.Message;
+                throw;
+            }
+
+            Results.Add(result);
+        }
+    }
+
+    private bool FilesAreEqual(string filePath1, string filePath2)
+    {
+        using (var hashAlgorithm = SHA256.Create())
+        {
+            var hash1 = GetFileHash(hashAlgorithm, filePath1);
+            var hash2 = GetFileHash(hashAlgorithm, filePath2);
+            return hash1.SequenceEqual(hash2);
+        }
+    }
+
+    private byte[] GetFileHash(HashAlgorithm hashAlgorithm, string filePath)
+    {
+        using (var stream = File.OpenRead(filePath))
+        {
+            return hashAlgorithm.ComputeHash(stream);
+        }
+    }
+
+    private void FixFileName_Click(object sender, RoutedEventArgs e)
     {
         Results.Clear();
         var directory = txtPath.Text;
@@ -146,6 +320,13 @@ public partial class MainWindow : Window
                 Results.First(r => r.OriginalPath == rename.OriginalPath).Status = $"Failed: {ex.Message}";
             }
         }
+    }
+
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        base.OnClosing(e);
+        SaveWindowSize();
+        SaveColumnWidths();
     }
 }
 
