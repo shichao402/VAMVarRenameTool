@@ -38,5 +38,12 @@ namespace VAMVarRenameTool
                 throw; // 保留原始堆栈信息
             }
         }
+
+        public void ReloadConfigs()
+        {
+            CreatorNameTransformer.ReloadConfigs();
+            PackageNameTransformer.ReloadConfigs();
+            CreatorPackageNameTransformer.ReloadConfigs();
+        }
     }
 }

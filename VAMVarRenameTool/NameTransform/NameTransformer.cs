@@ -6,7 +6,14 @@ namespace VAMVarRenameTool.NameTransform;
 
 public class NameTransformer
 {
+    protected string configFilePath;
     protected Dictionary<string, string> _nameMap = new();
+    
+    public NameTransformer(string fileName)
+    {
+        configFilePath = fileName;
+        LoadMappings(fileName);
+    }
 
     public bool TryTransform(string input, out string output)
     {
@@ -21,6 +28,12 @@ public class NameTransformer
     protected void LoadMappings(string fileName)
     {
         MappingFileParser.Parse(fileName, ref _nameMap, true);
+    }
+    
+    public void ReloadConfigs()
+    {
+        _nameMap.Clear();
+        LoadMappings(this.configFilePath);
     }
 
     private string GetFilePath(string fileName)

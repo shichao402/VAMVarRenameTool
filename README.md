@@ -30,4 +30,5 @@ Config你可以自行修改, 格式是{meta中的名字},,,{文件名中的名�
       - Abubu Nownanka.EgyptThroneRoom.1.var
       - AcidBubbles.Scripter1.16.var
   - 现在目标目录以及窗口大小和列表表头会记住状态以便下一次使用
-  - 新增组织文件夹功能. 在favorite_creator.txt中填入你关注的作者名字. 组织文件夹的时候会组织到根目录. 其余的会组织到.Dependencies目录中.
+  - 新增组织文件夹功能. 在favorite_creator.txt中填入你关注的作者名字. 组织文件夹的时候会组织到Organized目录中. 其余的会组织到.Dependencies目录中.
+  - 文件移动完成后. 如果有完全空的目录. 会清理掉.

@@ -132,6 +132,7 @@ public partial class MainWindow : Window
 
     private void Organize_Click(object sender, RoutedEventArgs e)
     {
+        Core.Instance.ReloadConfigs();
         Results.Clear();
         var directory = txtPath.Text;
         if (!Directory.Exists(directory)) return;
@@ -155,7 +156,7 @@ public partial class MainWindow : Window
             string targetDirectory;
             if (favoriteCreator.Contains(varMeta.CreatorName))
             {
-                targetDirectory = Path.Combine(directory, varMeta.CreatorName);
+                targetDirectory = Path.Combine(directory, "Organized", varMeta.CreatorName);
             }
             else
             {
@@ -207,6 +208,21 @@ public partial class MainWindow : Window
 
             Results.Add(result);
         }
+
+        // 重新扫描目录并删除空目录
+        RemoveEmptyDirectories(directory);
+    }
+
+    private void RemoveEmptyDirectories(string startLocation)
+    {
+        foreach (var directory in Directory.GetDirectories(startLocation))
+        {
+            RemoveEmptyDirectories(directory);
+            if (!Directory.EnumerateFileSystemEntries(directory).Any())
+            {
+                Directory.Delete(directory);
+            }
+        }
     }
 
     private bool FilesAreEqual(string filePath1, string filePath2)
@@ -229,6 +245,7 @@ public partial class MainWindow : Window
 
     private void FixFileName_Click(object sender, RoutedEventArgs e)
     {
+        Core.Instance.ReloadConfigs();
         Results.Clear();
         var directory = txtPath.Text;
         if (!Directory.Exists(directory)) return;

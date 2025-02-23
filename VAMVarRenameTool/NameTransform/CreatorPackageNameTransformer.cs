@@ -4,9 +4,8 @@ namespace VAMVarRenameTool.NameTransform;
 
 public class CreatorPackageNameTransformer : NameTransformer
 {
-    public CreatorPackageNameTransformer (string fileName)
+    public CreatorPackageNameTransformer (string fileName) : base(fileName)
     {
-        LoadMappings(fileName);
     }
     
     // key是meta里的名字, value是文件名上的名字
