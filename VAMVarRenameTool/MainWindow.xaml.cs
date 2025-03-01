@@ -138,123 +138,195 @@ public partial class MainWindow : Window
         {
             Core.Instance.ReloadConfigs();
             Results.Clear();
-            var directory = txtPath.Text;
-            var directoryPathSplit = directory.Split(Path.DirectorySeparatorChar);
-            if (!Directory.Exists(directory)) return;
+            var rootDirectory = txtPath.Text;
+            var directoryPathSplit = rootDirectory.Split(Path.DirectorySeparatorChar);
+            if (!Directory.Exists(rootDirectory)) return;
 
-            var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt").Select(line => line.Trim().ToLower()));
-            var pluginNames = new HashSet<string>(File.ReadAllLines("Config/plugins.txt").Select(line => line.Trim().ToLower()));
-            var skipDirNames = new HashSet<string>(File.ReadAllLines("Config/skip_dir.txt").Select(line => line.Trim().ToLower()));
-            var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
-
+            var files = Directory.GetFiles(rootDirectory, "*.*", SearchOption.AllDirectories);
             progressBar.Maximum = files.Length;
             progressBar.Value = 0;
 
             foreach (var file in files)
             {
-                var filePathSplit = file.Split(Path.DirectorySeparatorChar);
-                var fileDir = filePathSplit[directoryPathSplit.Length];
-                if (skipDirNames.Contains(fileDir.ToLower()))
-                    continue;
-                var result = new FileResult { OriginalPath = file };
-                VarMeta varMeta = new VarMeta();
-                try
+                var fileExt = Path.GetExtension(file);
+                switch (fileExt)
                 {
-                    Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+                    case ".var":
+                        ProcessVarClick(file, directoryPathSplit, rootDirectory);
+                        break;
+                    default:
+                        ProcessOther(file, directoryPathSplit, rootDirectory);
+                        break;
                 }
-                catch (Exception exception)
-                {
-                    result.Status = exception.Message;
-                    Results.Add(result);
-                    continue;
-                }
-
-                varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
-                varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
-
-                Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
-                Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
-                Core.Instance.PackageNameTransformer.TryTransform(varMeta);
-                
-                VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
-                if (varMeta.CreatorName == "Unknown")
-                {
-                    varMeta.CreatorName = varFileName.Creator;
-                }
-                if (varMeta.PackageName == "Unknown")
-                {
-                    varMeta.PackageName = varFileName.Package;
-                }
-
-                string targetDirectory;
-
-                if (pluginNames.Contains($"{varMeta.CreatorName.ToLower()}.{varMeta.PackageName}".ToLower()))
-                {
-                    targetDirectory = Path.Combine(directory, ".Plugins", varMeta.CreatorName);
-                }
-                else if (favoriteCreator.Contains(varMeta.CreatorName.ToLower()))
-                {
-                    targetDirectory = Path.Combine(directory, "Organized", varMeta.CreatorName);
-                }
-                else
-                {
-                    targetDirectory = Path.Combine(directory, ".Dependencies", varMeta.CreatorName);
-                }
-
-                try
-                {
-                    if (!Directory.Exists(targetDirectory))
-                    {
-                        Directory.CreateDirectory(targetDirectory);
-                    }
-
-                    var targetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
-
-                    if (file.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
-                    {
-                        result.Status = "Same, skip move";
-                    }
-                    else
-                    {
-                        if (File.Exists(targetPath))
-                        {
-                            if (FilesAreEqual(file, targetPath))
-                            {
-                                File.Delete(file);
-                            }
-                            else
-                            {
-                                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                                var newTargetPath = Path.Combine(targetDirectory, $"{Path.GetFileNameWithoutExtension(file)}.{timestamp}{Path.GetExtension(file)}");
-                                File.Move(file, newTargetPath);
-                            }
-                        }
-                        else
-                        {
-                            File.Move(file, targetPath);
-                        }
-
-                        result.NewName = targetPath;
-                        result.Status = "Moved";
-                    }
-                }
-                catch (Exception exception)
-                {
-                    result.Status = exception.Message;
-                    Results.Add(result);
-                    continue;
-                }
-
-                Results.Add(result);
-                progressBar.Value++;
             }
 
-            RemoveEmptyDirectories(directory);
+            RemoveEmptyDirectories(rootDirectory);
         }
         finally
         {
             EnableUI();
         }
+    }
+
+    private void ProcessOther(string file, string[] directoryPathSplit, string rootDirectory)
+    {
+        var result = new FileResult { OriginalPath = file };
+        try
+        {
+            var relativePath = string.Join(Path.DirectorySeparatorChar, file.Split(Path.DirectorySeparatorChar).Skip(directoryPathSplit.Length).SkipWhile(x => x == ".Other"));
+            var targetDirectory = Path.Combine(rootDirectory, ".Other", Path.GetDirectoryName(relativePath)!);
+
+            if (!Directory.Exists(targetDirectory))
+            {
+                Directory.CreateDirectory(targetDirectory);
+            }
+
+            var targetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+
+            if (file.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Status = "Same, skip move";
+            }
+            else
+            {
+                if (File.Exists(targetPath))
+                {
+                    // if (FilesAreEqual(file, targetPath))
+                    {
+                        RemoveReadOnlyAttribute(file);
+                        File.Delete(targetPath);
+                    }
+                    // else
+                    {
+                        var newTargetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+                        File.Move(file, newTargetPath);
+                    }
+                }
+                else
+                {
+                    File.Move(file, targetPath);
+                }
+
+                result.NewName = targetPath;
+                result.Status = "Moved";
+            }
+        }
+        catch (Exception exception)
+        {
+            result.Status = exception.Message;
+        }
+
+        Results.Add(result);
+        progressBar.Value++;
+    }
+
+    private void ProcessVarClick(string file, string[] directoryPathSplit, string directory)
+    {
+        var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt", Encoding.UTF8).Select(line => line.Trim().ToLower()));
+        var pluginNames = new HashSet<string>(File.ReadAllLines("Config/plugins.txt", Encoding.UTF8).Select(line => line.Trim().ToLower()));
+        var skipDirNames = new HashSet<string>(File.ReadAllLines("Config/skip_dir.txt", Encoding.UTF8).Select(line => line.Trim().ToLower()));
+        var filePathSplit = file.Split(Path.DirectorySeparatorChar);
+        var fileDir = filePathSplit[directoryPathSplit.Length];
+        if (skipDirNames.Contains(fileDir.ToLower()))
+            return;
+        var result = new FileResult { OriginalPath = file };
+        VarMeta varMeta = new VarMeta();
+        try
+        {
+            Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+        }
+        catch (Exception exception)
+        {
+            result.Status = exception.Message;
+            Results.Add(result);
+            return;
+        }
+
+        varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
+        varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
+
+        Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
+        Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
+        Core.Instance.PackageNameTransformer.TryTransform(varMeta);
+                
+        VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
+        if (varMeta.CreatorName == "Unknown")
+        {
+            varMeta.CreatorName = varFileName.Creator;
+        }
+        if (varMeta.PackageName == "Unknown")
+        {
+            varMeta.PackageName = varFileName.Package;
+        }
+
+        string targetDirectory;
+
+        if (pluginNames.Contains($"{varMeta.CreatorName.ToLower()}.{varMeta.PackageName}".ToLower()))
+        {
+            targetDirectory = Path.Combine(directory, ".Plugins", varMeta.CreatorName);
+        }
+        else if (favoriteCreator.Contains(varMeta.CreatorName.ToLower()))
+        {
+            targetDirectory = Path.Combine(directory, "Organized", varMeta.CreatorName);
+        }
+        else
+        {
+            targetDirectory = Path.Combine(directory, ".Dependencies", varMeta.CreatorName);
+        }
+
+        try
+        {
+            if (!Directory.Exists(targetDirectory))
+            {
+                Directory.CreateDirectory(targetDirectory);
+            }
+
+            var targetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+
+            if (file.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Status = "Same, skip move";
+            }
+            else
+            {
+                if (File.Exists(targetPath))
+                {
+                    // if (FilesAreEqual(file, targetPath))
+                    {
+                        var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                        var backupTargetDir = Path.Combine(directory, ".Backup", timestamp);
+                        var backupTargetPath = Path.Combine(backupTargetDir, Path.GetFileName(file));
+                        if (!Directory.Exists(backupTargetDir))
+                        {
+                            Directory.CreateDirectory(backupTargetDir);
+                        }
+                        File.Move(targetPath, backupTargetPath, true);
+                    }
+                    // else
+                    {
+                        // var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                        var newTargetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+                        File.Move(file, newTargetPath);
+                    }
+                }
+                else
+                {
+                    File.Move(file, targetPath);
+                }
+
+                result.NewName = targetPath;
+                result.Status = "Moved";
+            }
+        }
+        catch (Exception exception)
+        {
+            result.Status = exception.Message;
+            Results.Add(result);
+            return;
+        }
+
+        Results.Add(result);
+        progressBar.Value++;
     }
 
     private void RemoveEmptyDirectories(string startLocation)
@@ -264,6 +336,7 @@ public partial class MainWindow : Window
             RemoveEmptyDirectories(directory);
             if (!Directory.EnumerateFileSystemEntries(directory).Any())
             {
+                RemoveReadOnlyAttribute(directory);
                 Directory.Delete(directory);
             }
         }
@@ -430,6 +503,15 @@ public partial class MainWindow : Window
         base.OnClosing(e);
         SaveWindowSize();
         SaveColumnWidths();
+    }
+
+    private void RemoveReadOnlyAttribute(string filePath)
+    {
+        var fileInfo = new FileInfo(filePath);
+        if (fileInfo.IsReadOnly)
+        {
+            fileInfo.IsReadOnly = false;
+        }
     }
 }
 
