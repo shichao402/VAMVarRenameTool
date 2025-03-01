@@ -453,7 +453,7 @@ public partial class MainWindow : Window
         {
             if (nameCounts[rename.NewName.ToLower()] > 1)
             {
-                rename.HasConflict = true;
+                // rename.HasConflict = true;
                 Results.First(r => r.OriginalPath == rename.OriginalPath).Status = "Conflict";
             }
         }
@@ -468,6 +468,7 @@ public partial class MainWindow : Window
                 var newPath = Path.Combine(Path.GetDirectoryName(rename.OriginalPath)!, rename.NewName);
                 if (rename.OriginalPath != newPath)
                 {
+                    File.Move(rename.OriginalPath, newPath, true);
                     Results.First(r => r.OriginalPath == rename.OriginalPath).Status = "Renamed";
                 }
                 else
