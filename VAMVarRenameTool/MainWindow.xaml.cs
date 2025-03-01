@@ -135,15 +135,19 @@ public partial class MainWindow : Window
         Core.Instance.ReloadConfigs();
         Results.Clear();
         var directory = txtPath.Text;
+        var directoryPathSplit = directory.Split(Path.DirectorySeparatorChar);
         if (!Directory.Exists(directory)) return;
 
         var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt").Select(line => line.Trim().ToLower()));
         var pluginNames = new HashSet<string>(File.ReadAllLines("Config/plugins.txt").Select(line => line.Trim().ToLower()));
+        var skipDirNames = new HashSet<string>(File.ReadAllLines("Config/skip_dir.txt").Select(line => line.Trim().ToLower()));
         var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
 
         foreach (var file in files)
         {
-            if (file.Contains(".Plugins"))
+            var filePathSplit = file.Split(Path.DirectorySeparatorChar);
+            var fileDir = filePathSplit[directoryPathSplit.Length];
+            if (skipDirNames.Contains(fileDir.ToLower()))
                 continue;
             var result = new FileResult { OriginalPath = file };
             VarMeta varMeta = new VarMeta();
