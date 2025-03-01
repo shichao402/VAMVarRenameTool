@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using VAMVarRenameTool.MetaData;
 using VAMVarRenameTool.EventSystem;
 using VAMVarRenameTool.NameTransform;
+using System.Threading.Tasks;
 
 namespace VAMVarRenameTool;
 
@@ -130,120 +131,130 @@ public partial class MainWindow : Window
         SaveLastPath(txtPath.Text);
     }
 
-    private void Organize_Click(object sender, RoutedEventArgs e)
+    private async void Organize_Click(object sender, RoutedEventArgs e)
     {
-        Core.Instance.ReloadConfigs();
-        Results.Clear();
-        var directory = txtPath.Text;
-        var directoryPathSplit = directory.Split(Path.DirectorySeparatorChar);
-        if (!Directory.Exists(directory)) return;
-
-        var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt").Select(line => line.Trim().ToLower()));
-        var pluginNames = new HashSet<string>(File.ReadAllLines("Config/plugins.txt").Select(line => line.Trim().ToLower()));
-        var skipDirNames = new HashSet<string>(File.ReadAllLines("Config/skip_dir.txt").Select(line => line.Trim().ToLower()));
-        var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
-
-        foreach (var file in files)
+        DisableUI();
+        try
         {
-            var filePathSplit = file.Split(Path.DirectorySeparatorChar);
-            var fileDir = filePathSplit[directoryPathSplit.Length];
-            if (skipDirNames.Contains(fileDir.ToLower()))
-                continue;
-            var result = new FileResult { OriginalPath = file };
-            VarMeta varMeta = new VarMeta();
-            try
-            {
-                Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
-            }
-            catch (Exception exception)
-            {
-                result.Status = exception.Message;
-                Results.Add(result);
-                continue;
-            }
+            Core.Instance.ReloadConfigs();
+            Results.Clear();
+            var directory = txtPath.Text;
+            var directoryPathSplit = directory.Split(Path.DirectorySeparatorChar);
+            if (!Directory.Exists(directory)) return;
 
-            varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
-            varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
+            var favoriteCreator = new HashSet<string>(File.ReadAllLines("Config/favorite_creator.txt").Select(line => line.Trim().ToLower()));
+            var pluginNames = new HashSet<string>(File.ReadAllLines("Config/plugins.txt").Select(line => line.Trim().ToLower()));
+            var skipDirNames = new HashSet<string>(File.ReadAllLines("Config/skip_dir.txt").Select(line => line.Trim().ToLower()));
+            var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
 
-            Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
-            Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
-            Core.Instance.PackageNameTransformer.TryTransform(varMeta);
-            
-            VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
-            // 有一种异常情况, 有的作者...连meta都不写. meta里的作者都是空的.
-            if (varMeta.CreatorName == "Unknown")
-            {
-                varMeta.CreatorName = varFileName.Creator;
-            }
-            if (varMeta.PackageName == "Unknown")
-            {
-                varMeta.PackageName = varFileName.Package;
-            }
+            progressBar.Maximum = files.Length;
+            progressBar.Value = 0;
 
-            string targetDirectory;
-
-            if (pluginNames.Contains($"{varMeta.CreatorName.ToLower()}.{varMeta.PackageName}".ToLower()))
+            foreach (var file in files)
             {
-                targetDirectory = Path.Combine(directory, ".Plugins", varMeta.CreatorName);
-            }
-            else if (favoriteCreator.Contains(varMeta.CreatorName.ToLower()))
-            {
-                targetDirectory = Path.Combine(directory, "Organized", varMeta.CreatorName);
-            }
-            else
-            {
-                targetDirectory = Path.Combine(directory, ".Dependencies", varMeta.CreatorName);
-            }
-
-            try
-            {
-                if (!Directory.Exists(targetDirectory))
+                var filePathSplit = file.Split(Path.DirectorySeparatorChar);
+                var fileDir = filePathSplit[directoryPathSplit.Length];
+                if (skipDirNames.Contains(fileDir.ToLower()))
+                    continue;
+                var result = new FileResult { OriginalPath = file };
+                VarMeta varMeta = new VarMeta();
+                try
                 {
-                    Directory.CreateDirectory(targetDirectory);
+                    Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+                }
+                catch (Exception exception)
+                {
+                    result.Status = exception.Message;
+                    Results.Add(result);
+                    continue;
                 }
 
-                var targetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+                varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
+                varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
 
-                if (file.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+                Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
+                Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
+                Core.Instance.PackageNameTransformer.TryTransform(varMeta);
+                
+                VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
+                if (varMeta.CreatorName == "Unknown")
                 {
-                    result.Status = "Same, skip move";
+                    varMeta.CreatorName = varFileName.Creator;
+                }
+                if (varMeta.PackageName == "Unknown")
+                {
+                    varMeta.PackageName = varFileName.Package;
+                }
+
+                string targetDirectory;
+
+                if (pluginNames.Contains($"{varMeta.CreatorName.ToLower()}.{varMeta.PackageName}".ToLower()))
+                {
+                    targetDirectory = Path.Combine(directory, ".Plugins", varMeta.CreatorName);
+                }
+                else if (favoriteCreator.Contains(varMeta.CreatorName.ToLower()))
+                {
+                    targetDirectory = Path.Combine(directory, "Organized", varMeta.CreatorName);
                 }
                 else
                 {
-                    if (File.Exists(targetPath))
+                    targetDirectory = Path.Combine(directory, ".Dependencies", varMeta.CreatorName);
+                }
+
+                try
+                {
+                    if (!Directory.Exists(targetDirectory))
                     {
-                        if (FilesAreEqual(file, targetPath))
-                        {
-                            File.Delete(file);
-                        }
-                        else
-                        {
-                            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-                            var newTargetPath = Path.Combine(targetDirectory, $"{Path.GetFileNameWithoutExtension(file)}.{timestamp}{Path.GetExtension(file)}");
-                            File.Move(file, newTargetPath);
-                        }
+                        Directory.CreateDirectory(targetDirectory);
+                    }
+
+                    var targetPath = Path.Combine(targetDirectory, Path.GetFileName(file));
+
+                    if (file.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        result.Status = "Same, skip move";
                     }
                     else
                     {
-                        File.Move(file, targetPath);
+                        if (File.Exists(targetPath))
+                        {
+                            if (FilesAreEqual(file, targetPath))
+                            {
+                                File.Delete(file);
+                            }
+                            else
+                            {
+                                var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+                                var newTargetPath = Path.Combine(targetDirectory, $"{Path.GetFileNameWithoutExtension(file)}.{timestamp}{Path.GetExtension(file)}");
+                                File.Move(file, newTargetPath);
+                            }
+                        }
+                        else
+                        {
+                            File.Move(file, targetPath);
+                        }
+
+                        result.NewName = targetPath;
+                        result.Status = "Moved";
                     }
-
-                    result.NewName = targetPath;
-                    result.Status = "Moved";
                 }
-            }
-            catch (Exception exception)
-            {
-                result.Status = exception.Message;
+                catch (Exception exception)
+                {
+                    result.Status = exception.Message;
+                    Results.Add(result);
+                    continue;
+                }
+
                 Results.Add(result);
-                continue;
+                progressBar.Value++;
             }
 
-            Results.Add(result);
+            RemoveEmptyDirectories(directory);
         }
-
-        // 重新扫描目录并删除空目录
-        RemoveEmptyDirectories(directory);
+        finally
+        {
+            EnableUI();
+        }
     }
 
     private void RemoveEmptyDirectories(string startLocation)
@@ -276,80 +287,87 @@ public partial class MainWindow : Window
         }
     }
 
-    private void FixFileName_Click(object sender, RoutedEventArgs e)
+    private async void FixFileName_Click(object sender, RoutedEventArgs e)
     {
-        Core.Instance.ReloadConfigs();
-        Results.Clear();
-        var directory = txtPath.Text;
-        if (!Directory.Exists(directory)) return;
-
-        var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
-        var renamePlan = new List<RenameInfo>();
-
-        foreach (var file in files)
+        DisableUI();
+        try
         {
-            var result = new FileResult {OriginalPath = file};
-            VarMeta varMeta = new VarMeta();
-            try
+            Core.Instance.ReloadConfigs();
+            Results.Clear();
+            var directory = txtPath.Text;
+            if (!Directory.Exists(directory)) return;
+
+            var files = Directory.GetFiles(directory, "*.var", SearchOption.AllDirectories);
+            var renamePlan = new List<RenameInfo>();
+
+            progressBar.Maximum = files.Length;
+            progressBar.Value = 0;
+
+            foreach (var file in files)
             {
-                Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
-            }
-            catch (Exception exception)
-            {
-                result.Status = exception.Message;
+                var result = new FileResult {OriginalPath = file};
+                VarMeta varMeta = new VarMeta();
+                try
+                {
+                    Core.Instance.VarMetaProcessor.ParseFromVarFile(file, ref varMeta);
+                }
+                catch (Exception exception)
+                {
+                    result.Status = exception.Message;
+                    Results.Add(result);
+                    continue;
+                }
+                
+                varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
+                varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
+                Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
+                Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
+                Core.Instance.PackageNameTransformer.TryTransform(varMeta);
+
+                VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
+
+                if (varMeta.CreatorName == "Unknown")
+                {
+                    varMeta.CreatorName = varFileName.Creator;
+                }
+                if (varMeta.PackageName == "Unknown")
+                {
+                    varMeta.PackageName = varFileName.Package;
+                }
+                if (varFileName.Creator != varMeta.CreatorName)
+                {
+                    varFileName.Creator = varMeta.CreatorName;
+                    result.Status = "Renamed";
+                }
+
+                if (varFileName.Package != varMeta.PackageName)
+                {
+                    varFileName.Package = varMeta.PackageName;
+                    result.Status = "Renamed";
+                }
+
+                if (varFileName.OriginalFileName != varFileName.NewFileName)
+                {
+                    result.NewName = varFileName.NewFileName;
+                    result.Status = "Renamed";
+                    renamePlan.Add(new RenameInfo(file, result.NewName));
+                }
+                else
+                {
+                    result.Status = "Same";
+                }
+
                 Results.Add(result);
-                continue;
-            }
-            
-            // meta内的值转换特殊字符. 这是vam var本身的设计逻辑, 尊重.
-            varMeta.CreatorName = Core.Instance.CharTransformer.Transform(varMeta.CreatorName);
-            varMeta.PackageName = Core.Instance.CharTransformer.Transform(varMeta.PackageName);
-            // 尝试做映射转换, 处理一些更加异常的状况， 比如作者根本不用Vam里的打包工具。
-            // 注意这里有顺序. CreatorPackage合并的转换优先级最高.
-            Core.Instance.CreatorPackageNameTransformer.TryTransform(varMeta);
-            Core.Instance.CreatorNameTransformer.TryTransform(varMeta);
-            Core.Instance.PackageNameTransformer.TryTransform(varMeta);
-
-            VarFileName varFileName = Core.Instance.VarFileNameParser.Parse(file);
-
-            // 到这里， 理论上varMeta和varFileName里的数据应该完全一致。 如果不一致， 应该用varMeta里的数据替换到VarFileName
-            // 有一种异常情况, 有的作者...连meta都不写. meta里的作者都是空的.
-            if (varMeta.CreatorName == "Unknown")
-            {
-                varMeta.CreatorName = varFileName.Creator;
-            }
-            if (varMeta.PackageName == "Unknown")
-            {
-                varMeta.PackageName = varFileName.Package;
-            }
-            if (varFileName.Creator != varMeta.CreatorName)
-            {
-                varFileName.Creator = varMeta.CreatorName;
-                result.Status = "Renamed";
+                progressBar.Value++;
             }
 
-            if (varFileName.Package != varMeta.PackageName)
-            {
-                varFileName.Package = varMeta.PackageName;
-                result.Status = "Renamed";
-            }
-
-            if (varFileName.OriginalFileName != varFileName.NewFileName)
-            {
-                result.NewName = varFileName.NewFileName;
-                result.Status = "Renamed";
-                renamePlan.Add(new RenameInfo(file, result.NewName));
-            }
-            else
-            {
-                result.Status = "Same";
-            }
-
-            Results.Add(result);
+            DetectConflicts(renamePlan);
+            ExecuteRenames(renamePlan);
         }
-
-        DetectConflicts(renamePlan);
-        ExecuteRenames(renamePlan);
+        finally
+        {
+            EnableUI();
+        }
     }
 
     private void DetectConflicts(List<RenameInfo> renames)
@@ -389,6 +407,22 @@ public partial class MainWindow : Window
                 Results.First(r => r.OriginalPath == rename.OriginalPath).Status = $"Failed: {ex.Message}";
             }
         }
+    }
+
+    private void DisableUI()
+    {
+        txtPath.IsEnabled = false;
+        btnBrowseFolder.IsEnabled = false;
+        btnFixFileName.IsEnabled = false;
+        btnOrganize.IsEnabled = false;
+    }
+
+    private void EnableUI()
+    {
+        txtPath.IsEnabled = true;
+        btnBrowseFolder.IsEnabled = true;
+        btnFixFileName.IsEnabled = true;
+        btnOrganize.IsEnabled = true;
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

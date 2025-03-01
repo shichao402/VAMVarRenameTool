@@ -9,6 +9,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         
@@ -16,12 +17,14 @@
             <TextBox x:Name="txtPath" Width="300" Margin="5" 
                      PreviewDragOver="TxtPath_PreviewDragOver"
                      Drop="TxtPath_Drop"/>
-            <Button Content="Select Folder" Click="BrowseFolder_Click" Margin="5"/>
-            <Button Content="Fix File Name" Click="FixFileName_Click" Margin="5"/>
-            <Button Content="Organize" Click="Organize_Click" Margin="5"/>
+            <Button x:Name="btnBrowseFolder" Content="Select Folder" Click="BrowseFolder_Click" Margin="5"/>
+            <Button x:Name="btnFixFileName" Content="Fix File Name" Click="FixFileName_Click" Margin="5"/>
+            <Button x:Name="btnOrganize" Content="Organize" Click="Organize_Click" Margin="5"/>
         </StackPanel>
 
-        <DataGrid x:Name="dgResults" Grid.Row="1" Margin="5" AutoGenerateColumns="False"
+        <ProgressBar x:Name="progressBar" Grid.Row="1" Height="20" Margin="5"/>
+
+        <DataGrid x:Name="dgResults" Grid.Row="2" Margin="5" AutoGenerateColumns="False"
                   CanUserAddRows="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Original File" Binding="{Binding OriginalPath}" Width="600"/>
